@@ -9,16 +9,27 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    public function register(): void
+    public function register() : void
     {
-        //
+        $this->loadHelpers();
     }
 
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot() : void
     {
         //
+    }
+
+
+    /**
+     * Load helpers.
+     */
+    protected function loadHelpers()
+    {
+        foreach (glob(__DIR__ . '/../Helpers/*.php') as $filename) {
+            require_once $filename;
+        }
     }
 }

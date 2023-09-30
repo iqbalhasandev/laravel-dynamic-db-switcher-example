@@ -67,42 +67,15 @@ class RegisterController extends Controller
     protected function create(array $data)
     {
         $db_name = 'test_' . Str::random(10);
-        $this->createDynamicDB($db_name);
-        return User::create([
+
+        $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
             'password' => Hash::make($data['password']),
             'db_name'  => $db_name,
         ]);
-    }
-
-
-    public function createDynamicDB($db_name)
-    {
-        // Create a database for the User
-        $createDbQuery = "CREATE DATABASE IF NOT EXISTS $db_name";
-        DB::statement($createDbQuery);
-
-        // Switch to the newly created database
-        $useDbQuery = "USE $db_name";
-        DB::statement($useDbQuery);
-
-        // Import the SQL file into the database
-        $sql_path = base_path('database/sql/structure.sql');
-
-        if (file_exists($sql_path)) {
-            $sql = file_get_contents($sql_path);
-
-            // Use DB::unprepared to execute the SQL queries from the file
-            DB::unprepared($sql);
-            // use dfault database
-            $useDbQuery = "USE " . config('database.connections.mysql.database');
-            DB::statement($useDbQuery);
-        }
-        else {
-            // Handle the case where the SQL file doesn't exist
-            // You can log an error or take other appropriate action
-        }
+        createDynamicDB($user, $db_name);
+        return $user;
     }
 
 }
