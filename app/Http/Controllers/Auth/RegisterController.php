@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
 use App\Models\User;
-use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Foundation\Auth\RegistersUsers;
 
 class RegisterController extends Controller
 {
@@ -50,8 +52,8 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
     }
@@ -64,10 +66,43 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        $db_name = 'test_' . Str::random(10);
+        $this->createDynamicDB($db_name);
         return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
+            'name'     => $data['name'],
+            'email'    => $data['email'],
             'password' => Hash::make($data['password']),
+            'db_name'  => $db_name,
         ]);
     }
+
+
+    public function createDynamicDB($db_name)
+    {
+        // Create a database for the User
+        $createDbQuery = "CREATE DATABASE IF NOT EXISTS $db_name";
+        DB::statement($createDbQuery);
+
+        // Switch to the newly created database
+        $useDbQuery = "USE $db_name";
+        DB::statement($useDbQuery);
+
+        // Import the SQL file into the database
+        $sql_path = base_path('database/sql/structure.sql');
+
+        if (file_exists($sql_path)) {
+            $sql = file_get_contents($sql_path);
+
+            // Use DB::unprepared to execute the SQL queries from the file
+            DB::unprepared($sql);
+            // use dfault database
+            $useDbQuery = "USE " . config('database.connections.mysql.database');
+            DB::statement($useDbQuery);
+        }
+        else {
+            // Handle the case where the SQL file doesn't exist
+            // You can log an error or take other appropriate action
+        }
+    }
+
 }
